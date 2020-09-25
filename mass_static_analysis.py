@@ -11,11 +11,27 @@ import requests
 import shutil
 import glob
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename='/opt/massa/log/test.log',
-                    format="[%(asctime)s] %(levelname)s %(message)s",
-                    datefmt="%Y-%m-%d,%H:%M:%S",
-                    level=logging.INFO)
+# logger = logging.getLogger(__name__)
+# logging.basicConfig(filename='/opt/massa/log/test.log',
+#                     format="[%(asctime)s] %(levelname)s %(message)s",
+#                     datefmt="%Y-%m-%d,%H:%M:%S",
+#                     level=logging.INFO)
+
+formatter = logging.Formatter('[%(asctime)s] %(levelname)s %(message)s',datefmt="%Y-%m-%d,%H:%M:%S")
+
+def setup_logger(name, log_file, level=logging.INFO):
+    handler = logging.FileHandler(log_file)
+    handler.setFormatter(formatter)
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+    return logger
+
+#first logger
+logger = setup_logger('first_logger', '/opt/massa/log/test.log')
+
+# second file logger
+logger2 = setup_logger('second_logger', '/opt/massa/log/test2.log')
 
 def is_server_up(url):
     try:
@@ -51,10 +67,14 @@ def start_scan(directory, server_url, apikey, rescan='0'):
                 logger.info('[OK] Upload OK: %s', filename)
                 uploaded.append(response.json())
 
-                # move files
-                toDirectory = "/opt/massa/uploaded_mobsf"
-                shutil.move(fpath,toDirectory)
-                # end move files
+                try:
+                    # move files
+                    toDirectory = "/opt/massa/uploaded_mobsf"
+                    shutil.move(fpath,toDirectory)
+                    logger2.info('%s moved successfully',filename)
+                    # end move files
+                except:
+                    logger2.error('Failed to move %s',filename)
 
             elif response.status_code == 500:
                 logger.error('500 Internal Server Error')
@@ -63,7 +83,7 @@ def start_scan(directory, server_url, apikey, rescan='0'):
                 logger.error('405 Method Not Allowed')
 
             elif response.status_code == 422:
-                logger.error('U422 nprocessable Entity')
+                logger.error('422 Unprocessable Entity')
 
             elif response.status_code == 401:
                 logger.error('401 Unauthorized')
@@ -72,15 +92,19 @@ def start_scan(directory, server_url, apikey, rescan='0'):
                 logger.error('Performing Upload: %s', filename)
 
         else:
-            logging.error('%s is not an APK file', filename)
+            logger.error('%s is not an APK file', filename)
 
     logger.info('Running Static Analysis')
 
-    # delete remaining files
-    files = glob.glob('/opt/massa/uploads/*')
-    for f in files:
-        os.remove(f)
-    # end delete remaining files
+    try:
+        # delete remaining files
+        files = glob.glob('/opt/massa/uploads/*')
+        for f in files:
+            os.remove(f)
+        # end delete remaining files
+        logger2.info('%s deleted succesfully' ,f)
+    except:
+        logger2.error('%s failed to delete', f)
 
     for upl in uploaded:
         logger.info('Started Static Analysis on: %s', upl['file_name'])
