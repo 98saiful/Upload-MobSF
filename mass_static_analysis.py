@@ -12,6 +12,10 @@ import shutil
 import glob
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(filename='/opt/massa/log/test.log',
+                    format="[%(asctime)s] %(levelname)s %(message)s",
+                    datefmt="%Y-%m-%d,%H:%M:%S",
+                    level=logging.INFO)
 
 def is_server_up(url):
     try:
@@ -46,13 +50,29 @@ def start_scan(directory, server_url, apikey, rescan='0'):
             if response.status_code == 200 and 'hash' in response.json():
                 logger.info('[OK] Upload OK: %s', filename)
                 uploaded.append(response.json())
+
                 # move files
                 toDirectory = "/opt/massa/uploaded_mobsf"
                 shutil.move(fpath,toDirectory)
                 # end move files
 
+            elif response.status_code == 500:
+                logger.error('500 Internal Server Error')
+
+            elif response.status_code == 405:
+                logger.error('405 Method Not Allowed')
+
+            elif response.status_code == 422:
+                logger.error('U422 nprocessable Entity')
+
+            elif response.status_code == 401:
+                logger.error('401 Unauthorized')
+
             else:
                 logger.error('Performing Upload: %s', filename)
+
+        else:
+            logging.error('%s is not an APK file', filename)
 
     logger.info('Running Static Analysis')
 
