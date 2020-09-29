@@ -42,6 +42,7 @@ def is_server_up(url):
     return False
 
 
+
 def start_scan(directory, server_url, apikey, rescan='0'):
     print('\nLooking for Android/iOS/'
           'Windows binaries or source code in : ' + directory)
@@ -92,19 +93,27 @@ def start_scan(directory, server_url, apikey, rescan='0'):
                 logger.error('Performing Upload: %s', filename)
 
         else:
-            logger.error('%s is not an APK file', filename)
+            logger.warning('%s is not an APK file', filename)
 
     logger.info('Running Static Analysis')
 
-    try:
-        # delete remaining files
-        files = glob.glob('/opt/massa/uploads/*')
-        for f in files:
+    # try:
+    #     # delete remaining files
+    #     files = glob.glob('/opt/massa/uploads/*')
+    #     for f in files:
+    #         os.remove(f)
+    #         logger2.info('%s deleted succesfully', f)
+    #
+    # except:
+    #     logger2.error('%s failed to delete', f)
+
+    files = glob.glob('/opt/massa/uploads/*')
+    for f in files:
+        try:
             os.remove(f)
-        # end delete remaining files
-        logger2.info('%s deleted succesfully' ,f)
-    except:
-        logger2.error('%s failed to delete', f)
+            logger2.info('%s deleted succesfully', f)
+        except:
+            logger2.error('%s failed to delete', f)
 
     for upl in uploaded:
         logger.info('Started Static Analysis on: %s', upl['file_name'])
